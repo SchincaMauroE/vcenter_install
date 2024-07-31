@@ -1,14 +1,17 @@
 vCenter Install
 =========
+
 Despliega una maquina virtual de vCenter en un servidor ESXi y agrega el servidor al vCenter
 
 Requirements
 ------------
-community.general de Ansible
-python3-pyvmomi v6.7.4 o superior
+
+- community.general de Ansible
+- python3-pyvmomi v6.7.4 o superior
 
 Role Variables
 --------------
+
 - validate_certs: 'no' si no se han configurado los certificados SSL, 'yes' sino
 - esxi_server: url o direccion ip del servidor ESXi
 - esxi_username: usuario del servidor ESXi
@@ -47,5 +50,6 @@ BSD
 Author Information
 ------------------
 
-Mauro Ezequiel Schinca, mschinca@bancocredicoop.coop & Matías Gabriel Oviedo, mgoviedo@bancocredicoop.coop
+- Matías Gabriel Oviedo, mgoviedo@bancocredicoop.coop
+- Mauro Ezequiel Schinca, mschinca@bancocredicoop.coop
 

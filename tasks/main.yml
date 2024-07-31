@@ -1,0 +1,97 @@
+---
+# tasks file for vcenter_install
+- name: Adquirir información del Host ESXi
+  community.vmware.vmware_host_facts:
+    hostname: "{{ esxi_server }}"
+    username: "{{ esxi_username }}"
+    password: "{{ esxi_password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: host_facts
+  delegate_to: localhost
+
+- name: Datastore \" {{ vcenter_datastore }} \" presente y con capacidad suficiente
+  fail:
+    msg: "Datastore {{ vcenter_datastore }} no cumple con el espacio mínimo requerido"
+  when:
+    - item.name == '{{ vcenter_datastore }}'
+    - (item.free | regex_replace(' TB', '') | float) < 1 or (item.free | regex_search(" GB")) == " GB"
+  loop: "{{ host_facts.ansible_facts.ansible_datastore }}"
+
+- name: Despliegue del vCenter a partir del archivo OVA
+  community.vmware.vmware_deploy_ovf:
+    hostname: '{{ esxi_server }}'
+    username: '{{ esxi_username }}'
+    password: '{{ esxi_password }}'
+    ovf: '{{ path_ova_file }}'
+    name: '{{ vcenter_name }}'
+    datastore: '{{ vcenter_datastore }}'
+    networks: 
+      'Network 1': '{{ vcenter_network }}'
+    validate_certs: '{{ validate_certs }}'
+    inject_ovf_env: true
+    wait_for_ip_address: true
+    deployment_option: '{{ vcsa_size }}' #vCenter t-shirt size: tiny,small,medium,large, or infrastructure
+    properties:
+       guestinfo.cis.appliance.net.addr.family: 'ipv4' # ipv4 or ipv6
+       guestinfo.cis.appliance.net.mode: 'static' # static or dhcp
+       guestinfo.cis.appliance.net.addr: '{{ vcenter_address }}' 
+       guestinfo.cis.appliance.net.pnid: "{{ vcenter_hostname }}" # FQDN of vcenter server
+       guestinfo.cis.appliance.net.prefix: '{{ net_prefix }}' # netmask length, CIDR notation, i.e. '24'
+       guestinfo.cis.appliance.net.gateway: '{{ net_gateway }}' 
+       guestinfo.cis.appliance.net.dns.servers: '{{ dns_servers }}' # Comma separated list of IP addresses of DNS servers.
+       guestinfo.cis.appliance.root.passwd: '{{ vcenter_password }}' 
+       guestinfo.cis.deployment.autoconfig: 'True' # Auto-configure after deployment
+       guestinfo.cis.ceip_enabled: "False"
+       guestinfo.cis.vmdir.password: '{{ vcenter_password }}' # SSO Password for administrator@vsphere.local
+       domain: '{{ domain }}'
+       searchpath: '{{ searchpath }}'
+  delegate_to: localhost
+
+- name: Wait for vCenter
+  community.vmware.vmware_about_info:
+    hostname: '{{ vcenter_address }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    validate_certs: '{{ validate_certs }}'
+  delegate_to: localhost
+  retries: 20
+  delay: 60
+  register: result
+  until: result is succeeded
+
+- name: Crear Datacenter {{ vcenter_datacenter }}
+  community.vmware.vmware_datacenter:
+    hostname: '{{ vcenter_address }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    datacenter_name: '{{ vcenter_datacenter }}'
+    state: present
+    validate_certs: '{{ validate_certs }}'
+  delegate_to: localhost
+
+- name: Crear Cluster {{ vcenter_cluster }}
+  community.vmware.vmware_cluster:
+    hostname: '{{ vcenter_address }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    datacenter_name: '{{ vcenter_datacenter }}'
+    cluster_name: '{{ vcenter_cluster }}'
+    validate_certs: '{{ validate_certs }}'
+    #enable_ha: no
+    #enable_drs: yes
+    #enable_vsan: no
+  delegate_to: localhost
+
+- name: Agregar ESXi Host al vCenter
+  community.vmware.vmware_host:
+    hostname: '{{ vcenter_address }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    datacenter: '{{ vcenter_datacenter }}'
+    cluster: '{{ vcenter_cluster }}'
+    esxi_hostname: '{{ esxi_server }}'
+    esxi_username: '{{ esxi_username }}'
+    esxi_password: '{{ esxi_password }}'
+    validate_certs: '{{ validate_certs }}'
+    state: present
+  delegate_to: localhost

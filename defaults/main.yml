@@ -1,0 +1,22 @@
+---
+# defaults file for vcenter_install
+validate_certs: no
+esxi_server: 'hostname.domain'
+esxi_username: 'root'
+esxi_password: 'esxi_passwd'
+path_ova_file: 'path/to/ova_file'
+vcenter_datastore: 'datastore'
+vcenter_name: 'vcenter_vm_name'
+vcenter_network: 'network_name'
+vcenter_username: 'administrator@vsphere.local'
+vcenter_password: 'vc_passwd'
+vcenter_hostname: 'hostname' # sin acceso al servidor DNS usar dirección IP
+vcenter_address: '0.0.0.0'
+vcenter_datacenter: 'datacenter1'
+vcenter_cluster: 'cluster1'
+net_prefix: '24'
+net_gateway: '0.0.0.0'
+dns_servers: '0.0.0.0'
+domain: 'domain.root'
+searchpath: 'domain.root'
+vcsa_size: 'tiny'

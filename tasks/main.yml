@@ -47,7 +47,7 @@
        searchpath: '{{ searchpath }}'
   delegate_to: localhost
 
-- name: Wait for vCenter
+- name: Esperar respuesta del vCenter
   community.vmware.vmware_about_info:
     hostname: '{{ vcenter_address }}'
     username: '{{ vcenter_username }}'
